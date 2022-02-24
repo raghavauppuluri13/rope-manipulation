@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<mujoco model="panda">
+
+    <include file="panda/assets.xml"/>
+    <compiler meshdir="panda"/>
+
+    <option cone="elliptic">
+        <flag gravity="enable"/>
+    </option>
+
+    <include file="panda/arm_with_gripper.xml"/>
+
+    <include file="panda/actuators/pos_with_gripper.xml"/>
+
+    <include file="panda/sensors/ft_sensor.xml" />
+
+</mujoco>

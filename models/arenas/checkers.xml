@@ -1,0 +1,15 @@
+<mujoco model="bandage">
+    <asset>
+        <texture name="checkered" type="2d" builtin="checker" 
+            width="300" height="300" rgb1="0.2 0.3 0.4" rgb2="0.3 0.4 0.5"/>
+        <material name="grid" reflectance="0.05" texrepeat="5 5" texture="checkered"/>
+    </asset>
+    <worldbody>
+        <geom type="plane" size="3 3 .1" material="grid"/>
+        <light name="l1" pos="-2 1 3" dir="2 1 -2" castshadow="false"/>
+        <light name="l2" pos="-1 1 3" dir="1 1 -2" castshadow="false"/>
+        <light name="l3" pos="0 -1 3" dir="0 1 -2" castshadow="false"/>
+        <light name="l4" pos="1 1 3" dir="1 1 -2" castshadow="false"/>
+        <light name="l5" pos="2 1 3" dir="2 1 -2" castshadow="false"/>
+    </worldbody>
+</mujoco>
