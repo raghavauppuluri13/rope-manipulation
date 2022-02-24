@@ -1,18 +1,17 @@
-'''
-Run
-'''
-import matplotlib.pyplot as plt
+"""
+Run Rope Env
+"""
 import numpy as np
 
 from controllers import PositionController
-
 from envs import Renderer, RopeEnv
 
 env = RopeEnv()
 
 controller = PositionController(env.physics)
-controller.set_goal(np.array([-2,0.5,0.5,0.1,0.5,0.5,0.1,0.04,0.04]))
+controller.set_goal(np.array([-2, 0.5, 0.5, 0.1, 0.5, 0.5, 0.1, 0.04, 0.04]))
 
+# Init position
 init_joints = np.array([0] * 9)
 with env.physics.reset_context():
     env.physics.data.qpos[range(9)] = init_joints

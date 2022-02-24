@@ -1,0 +1,11 @@
+name: rope_env 
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  - numpy
+  - matplotlib 
+  - pip
+  - pip:
+    - dm_control
+    - pyyaml
