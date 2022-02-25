@@ -21,6 +21,7 @@ python rope_env.py
 ## To-do
 
 - [x] Basic env with rope + panda
-- [x] Position/Torque Controller for Panda
+- [x] Position Controller for Panda
+- [ ] Torque Controller for Panda
 - [ ] Learn low-dim plan representation from image start/goal configurations according to [Learning Plannable Representations with Causal InfoGAN](https://arxiv.org/abs/1807.09341)
 - [ ] Execute plans using MPC
