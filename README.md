@@ -1,6 +1,6 @@
 # rope-manipulation
 
-Manipulating rope to different goal states. From high-dimensional images, generate
+Manipulating rope to different goal states using Mujoco.
 
 ## Quick Start
 
@@ -25,3 +25,6 @@ python rope_env.py
 - [ ] Torque Controller for Panda
 - [ ] Learn low-dim plan representation from image start/goal configurations according to [Learning Plannable Representations with Causal InfoGAN](https://arxiv.org/abs/1807.09341)
 - [ ] Execute plans using MPC
+
+## Sources
+- Panda Mujoco xml model adapted from https://github.com/justagist/mujoco_panda
