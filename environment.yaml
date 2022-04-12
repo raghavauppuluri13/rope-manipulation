@@ -8,4 +8,6 @@ dependencies:
   - pip
   - pip:
     - dm_control
+    - mujoco
     - pyyaml
+    - robosuite 

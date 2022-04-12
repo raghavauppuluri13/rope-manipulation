@@ -1,0 +1,45 @@
+# Panda Arm Configuration Parameters
+jnt_names:
+  - "panda/joint_1"
+  - "panda/joint_2"
+  - "panda/joint_3"
+  - "panda/joint_4"
+  - "panda/joint_5"
+  - "panda/joint_6"
+  - "panda/joint_7"
+
+act_names:
+  - "panda/act_1"
+  - "panda/act_2"
+  - "panda/act_3"
+  - "panda/act_4"
+  - "panda/act_5"
+  - "panda/act_6"
+  - "panda/act_7"
+bias: [0,0,0,50,0,0,0]
+ee_site: "panda/ee_site"
+
+# Controller Params
+hz: 25
+pos:
+  Kp: [50, 50, 50, 50, 50, 50, 50, 50, 50]
+  Ki: [0,0,0,75,0,5,5]
+  damp_ratio: 1
+
+ee_site: "gripper0_ft_frame"
+
+vel:
+  Kp: [0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03]
+
+torq:
+  Kp: []
+  Kd: []
+
+mpc:
+  sample_len: 50
+  rollout_len: 5
+  cem_len: 5
+  top_traj: 5
+  w_pos: 100
+  w_vel: 0.0
+  w_reg: 0.0
