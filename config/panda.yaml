@@ -1,32 +1,30 @@
 # Panda Arm Configuration Parameters
 jnt_names:
-  - "panda/joint_1"
-  - "panda/joint_2"
-  - "panda/joint_3"
-  - "panda/joint_4"
-  - "panda/joint_5"
-  - "panda/joint_6"
-  - "panda/joint_7"
+  - "robot0_joint1"
+  - "robot0_joint2"
+  - "robot0_joint3"
+  - "robot0_joint4"
+  - "robot0_joint5"
+  - "robot0_joint6"
+  - "robot0_joint7"
 
 act_names:
-  - "panda/act_1"
-  - "panda/act_2"
-  - "panda/act_3"
-  - "panda/act_4"
-  - "panda/act_5"
-  - "panda/act_6"
-  - "panda/act_7"
-bias: [0,0,0,50,0,0,0]
-ee_site: "panda/ee_site"
+  - "robot0_torq_j1"
+  - "robot0_torq_j2"
+  - "robot0_torq_j3"
+  - "robot0_torq_j4"
+  - "robot0_torq_j5"
+  - "robot0_torq_j6"
+  - "robot0_torq_j7"
+
+ee_site: "gripper0_ft_frame"
 
 # Controller Params
 hz: 25
 pos:
-  Kp: [50, 50, 50, 50, 50, 50, 50, 50, 50]
+  Kp: [50, 50, 100, 100, 50, 50, 50]
   Ki: [0,0,0,75,0,5,5]
-  damp_ratio: 1
-
-ee_site: "gripper0_ft_frame"
+  damp_ratio: 0.4
 
 vel:
   Kp: [0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03]

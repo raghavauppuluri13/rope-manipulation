@@ -26,15 +26,19 @@ class Controller:
         self.params_file = params_file
         self.env = env
         self.phys = env.physics
-        print(env.physics.named.data.qpos)
-        self.jnt_names = env.action_spec.name
+        self.jnt_names = self.params["jnt_names"]
         self.jnt_inds = np.array(
             self.phys.named.data.qpos.axes.row.convert_key_item(self.jnt_names)
         )
         self.act_names = self.params["act_names"]
+        self.ctrl_inds = np.array(
+            self.phys.named.data.ctrl.axes.row.convert_key_item(self.act_names)
+        )
         self.dof = len(self.jnt_names)
         self.ee_site = self.params["ee_site"]
         self.ik_attempts = 5
+
+        self.update()
 
         #self.mass_matrix = None
 
@@ -97,11 +101,9 @@ class PositionController(Controller):
 
     def set_cartesian_goal(self, target_pos=None, target_quat=DOWN_QUATERNION):
         super().set_cartesian_goal(target_pos, target_quat)
-        self.interpolator.set_goal(self.setpoint)
 
     def step(self):
         self.update()
-        self.setpoint = self.interpolator.next()
         err = self.setpoint - self.qpos
         D_err = -self.qvel
 
@@ -109,10 +111,12 @@ class PositionController(Controller):
         #     self.err_sum += err
 
         desired_ctrl = np.multiply(self.Kp, err) + np.multiply(self.Kd, D_err)
-        self.ctrl = np.dot(self.mass_matrix, desired_ctrl) + self.grav_comp 
+        ctrl = np.dot(self.mass_matrix, desired_ctrl) + self.grav_comp 
+        self.ctrl = self.phys.data.ctrl
+        self.ctrl[self.ctrl_inds] = ctrl
         #self.ctrl = np.clip(desired_ctrl, self.env.action_spec.minimum, self.action_spec.maximum)
         #ss_term = np.multiply(self.Ki, self.err_sum)
-        #self.phys.data.qfrc_applied[self.jnt_inds] = self.grav_comp
+        self.phys.data.qfrc_applied[self.jnt_inds] = self.grav_comp
         # self.saturated = (
         #     False if np.sum(np.abs(self.ctrl - desired_ctrl)) == 0 else True
         # )

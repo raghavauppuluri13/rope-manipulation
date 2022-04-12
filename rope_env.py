@@ -14,7 +14,7 @@ _ROPE_XML_PATH = os.path.abspath('models/rope/rope.xml')
 _CAMERA = observations.CameraObservableSpec(
     height=240,
     width=480,
-    enabled=False,
+    enabled=True,
     update_interval=1,
     buffer_size=1,
     delay=0,
@@ -25,7 +25,8 @@ _PERFECT_FEATURES = observations.ObservationSettings(
     proprio=observations._ENABLED_FEATURE,
     ftt=observations._ENABLED_FTT,
     prop_pose=observations._ENABLED_FEATURE,
-    camera=observations._ENABLED_CAMERA)
+    camera=_CAMERA
+)
 
 class WorkspaceEntity(composer.ModelWrapperEntity):
     def _build(self, mjcf_model):
@@ -99,7 +100,6 @@ def rope_env():
         )
     env.reset()
     env_xml = env.model.get_xml()
-    print(env_xml)
 
     world = mjcf.from_xml_string(env_xml)
     cube = world.find('body','cube_main')
@@ -109,7 +109,7 @@ def rope_env():
     world_entity = WorkspaceEntity(world)
 
     task = RopeWrapTask(world_entity,rope_entity,_PERFECT_FEATURES)
-    task.control_timestep = 0.02
+    task.control_timestep = 0.002
     env = composer.Environment(task)
 
     return env

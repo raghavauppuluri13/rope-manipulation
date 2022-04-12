@@ -41,6 +41,6 @@ class Interpolator:
         )
 
     def next(self): 
-        if i < len(self.traj):
-            i += 1
-        return self.traj[i]
+        if self.i < len(self.traj)-1:
+            self.i += 1
+        return self.traj[self.i]
