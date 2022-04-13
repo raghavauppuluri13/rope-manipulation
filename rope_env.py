@@ -1,3 +1,13 @@
+import robosuite as suite
+env = suite.make(
+        'Lift',
+        robots=["Panda"],
+        has_renderer=False,
+        has_offscreen_renderer=False,
+        ignore_done=True,
+        use_camera_obs=False,
+        control_freq=100,
+)
 import collections
 from dm_control import mjcf
 from dm_control import composer
@@ -6,8 +16,10 @@ from dm_control.composer.observation import observable
 from dm_control.manipulation.shared import observations
 
 import os
+EYE_IN_HAND_VIEW = "robot0_eye_in_hand"
 
-import robosuite as suite
+TASK_VIEW = "robot0_robotview"
+FRONT_VIEW = "frontview"
 
 _ROPE_XML_PATH = os.path.abspath('models/rope/rope.xml')
 
@@ -89,15 +101,7 @@ class RopeWrapTask(composer.Task):
         return self._observables 
 
 def rope_env():
-    env = suite.make(
-            'Lift',
-            robots=["Panda"],
-            has_renderer=False,
-            has_offscreen_renderer=False,
-            ignore_done=True,
-            use_camera_obs=False,
-            control_freq=100,
-        )
+    global env
     env.reset()
     env_xml = env.model.get_xml()
 
@@ -109,7 +113,7 @@ def rope_env():
     world_entity = WorkspaceEntity(world)
 
     task = RopeWrapTask(world_entity,rope_entity,_PERFECT_FEATURES)
-    task.control_timestep = 0.002
+    task.control_timestep = 0.1
     env = composer.Environment(task)
 
     return env

@@ -14,10 +14,7 @@ from mujoco import rollout
 from dm_control import mjcf, mujoco,composer
 from dm_control.utils.inverse_kinematics import qpos_from_site_pose
 
-from utils import Interpolator
-
 DOWN_QUATERNION = np.array([0., 0.70710678118, 0.70710678118, 0.])
-
 
 class Controller:
     def __init__(self, env: composer.Environment, params_file):
@@ -35,12 +32,42 @@ class Controller:
             self.phys.named.data.ctrl.axes.row.convert_key_item(self.act_names)
         )
         self.dof = len(self.jnt_names)
+
+        self.phys.forward()
+        self.qpos = self.phys.named.data.qpos[self.jnt_names]
+        self.qvel = self.phys.named.data.qvel[self.jnt_names]
+        mass_matrix = np.zeros((self.phys.model.nq, self.phys.model.nq))
+        mujoco.mj_fullM(self.phys.model.ptr, mass_matrix, self.phys.data.qM)
+        self.mass_matrix = mass_matrix[self.jnt_inds, :][:, self.jnt_inds]
+        self.grav_comp = self.phys.data.qfrc_bias[self.jnt_inds]
+        self.setpoint = self.qpos
+
+    def set_joint_goal(self, setpoint):
+        assert isinstance(setpoint, (list, np.ndarray, tuple))
+        assert len(setpoint) == self.dof, "Invalid setpoint shape"
+        self.setpoint = setpoint
+
+    def update(self):
+        self.phys.forward()
+        self.qpos = self.phys.named.data.qpos[self.jnt_names]
+        self.qvel = self.phys.named.data.qvel[self.jnt_names]
+        mass_matrix = np.zeros((self.phys.model.nq, self.phys.model.nq))
+        mujoco.mj_fullM(self.phys.model.ptr, mass_matrix, self.phys.data.qM)
+        self.mass_matrix = mass_matrix[self.jnt_inds, :][:, self.jnt_inds]
+        self.grav_comp = self.phys.data.qfrc_bias[self.jnt_inds]
+    
+    def set_ctrl(self,ctrl):
+        full_ctrl = np.zeros_like(self.phys.data.ctrl)
+        full_ctrl[self.ctrl_inds] = ctrl
+        return full_ctrl 
+        
+
+class ArmController(Controller):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.ee_site = self.params["ee_site"]
-        self.ik_attempts = 5
-
-        self.update()
-
-        #self.mass_matrix = None
+        self.ee_pos = self.phys.named.data.site_xpos[self.ee_site]
+        self.ik_attempts = 10
 
     def ik(self, target_pos=None, target_quat=None):
         assert target_pos is not None or target_quat is not None
@@ -51,78 +78,77 @@ class Controller:
                 target_pos=target_pos,
                 target_quat=target_quat,
                 joint_names=self.jnt_names,
+                max_steps=200
             )
             if res.success:
                 break
         assert res.success
         return res.qpos[self.jnt_inds]
 
-    def set_joint_goal(self, setpoint):
-        assert isinstance(setpoint, (list, np.ndarray, tuple))
-        assert len(setpoint) == self.dof, "Invalid setpoint shape"
-        self.setpoint = setpoint
-
-    def set_cartesian_goal(self, target_pos=None, target_quat=None):
+    def set_cartesian_goal(self, target_pos=None, target_quat=DOWN_QUATERNION):
         goal_qpos = self.ik(target_pos, target_quat)
         self.set_joint_goal(goal_qpos)
 
     def update(self):
-        self.qpos = self.phys.named.data.qpos[self.jnt_names]
-
-        self.qvel = self.phys.named.data.qvel[self.jnt_names]
-        self.ee_pos = (
-            self.phys.named.data.site_xpos[self.ee_site]
-            if self.ee_site is not None
-            else None
-        )
-        mass_matrix = np.zeros((self.phys.model.nq, self.phys.model.nq))
-        mujoco.mj_fullM(self.phys.model.ptr, mass_matrix, self.phys.data.qM)
-        self.mass_matrix = mass_matrix[self.jnt_inds, :][:, self.jnt_inds]
-        self.grav_comp = self.phys.data.qfrc_bias[self.jnt_inds]
+        super().update()
+        self.ee_pos = self.phys.named.data.site_xpos[self.ee_site]
 
 
 class PositionController(Controller):
     """Task pose controller"""
 
-    def __init__(self, phys: mjcf.Physics, params_file="panda_cfg.yaml"):
+    def __init__(self, **kwargs):
         """Initializes position controller
 
         Args:
             physics (mjcf.Physics): Mujoco Physics instance
             params_file (string): path to file for PD controller
         """
-        super().__init__(phys, params_file)
+        super().__init__(**kwargs)
         self.Kp = np.array(self.params["pos"]["Kp"])
-        self.Ki = np.array(self.params["pos"]["Ki"])
-        self.Kd = 2 * np.sqrt(self.Kp) * self.params["pos"]["damp_ratio"]
+        #self.Ki = np.array(self.params["pos"]["Ki"])
+        self.Kd = np.array(self.params["pos"]["Kd"]) 
 
-        self.saturated = False
-        self.err_sum = np.zeros(self.dof)
+        # self.saturated = False
+        # self.err_sum = np.zeros(self.dof)
 
-    def set_cartesian_goal(self, target_pos=None, target_quat=DOWN_QUATERNION):
-        super().set_cartesian_goal(target_pos, target_quat)
 
     def step(self):
         self.update()
         err = self.setpoint - self.qpos
         D_err = -self.qvel
 
-        # if not self.saturated:
-        #     self.err_sum += err
-
         desired_ctrl = np.multiply(self.Kp, err) + np.multiply(self.Kd, D_err)
-        ctrl = np.dot(self.mass_matrix, desired_ctrl) + self.grav_comp 
-        self.ctrl = self.phys.data.ctrl
-        self.ctrl[self.ctrl_inds] = ctrl
+        ctrl = np.dot(self.mass_matrix, desired_ctrl) + self.grav_comp
         #self.ctrl = np.clip(desired_ctrl, self.env.action_spec.minimum, self.action_spec.maximum)
-        #ss_term = np.multiply(self.Ki, self.err_sum)
-        self.phys.data.qfrc_applied[self.jnt_inds] = self.grav_comp
         # self.saturated = (
-        #     False if np.sum(np.abs(self.ctrl - desired_ctrl)) == 0 else True
+        #     False if np.sum(np.abs(ctrl - desired_ctrl)) == 0 else True
         # )
-        return self.ctrl
+        return self.set_ctrl(ctrl)
 
-class VelocityController(Controller):
+class ArmPositionController(ArmController,PositionController):
+    def __init__(self, env, params_file="panda_cfg.yaml"):
+        super().__init__(env=env, params_file=params_file)
+
+class GripperController(Controller):
+    def __init__(self, env, params_file="panda_cfg.yaml"):
+        """Initializes position controller
+
+        Args:
+            physics (mjcf.Physics): Mujoco Physics instance
+            params_file (string): path to file for PD controller
+        """
+        super().__init__(env=env, params_file=params_file)
+        self.grip_force_sensor = self.params['force_sensor']
+        self.open = np.array(self.params['open'])
+        self.close = np.array(self.params['closed'])
+    
+    def step(self):
+        self.update()
+        return self.set_ctrl(self.setpoint) 
+
+
+class VelocityController(ArmController):
     """Joint velocity controller"""
 
     def __init__(self, phys: mjcf.Physics, params_file="panda_cfg.yaml"):
@@ -149,7 +175,7 @@ class VelocityController(Controller):
             self.err_sum += err
 
         desired_ctrl = np.multiply(self.Kp, err) + np.multiply(self.Kd, D_err)
-        self.ctrl = np.dot(self.mass_matrix, desired_ctrl)
+        self.ctrl = np.dot(self.mass_matrix, desired_ctrl) + self.grav_comp
 
         self.ctrl = np.clip(desired_ctrl, self.min_ctrl, self.max_ctrl)
         grav_comp = self.phys.named.data.qfrc_bias[self.jnt_names]
@@ -167,9 +193,9 @@ class VelocityController(Controller):
         """
         self.step()
 
-class MPC(Controller):
-    def __init__(self, phys, params):
-        super().__init__(phys, params)
+class MPC(ArmController):
+    def __init__(self, env, params):
+        super().__init__(env, params)
         self.mpc_params = self.params["mpc"]
         self.sample_len = self.mpc_params["sample_len"]
         self.rollout_len = self.mpc_params["rollout_len"]
@@ -218,31 +244,32 @@ class MPC(Controller):
             (self.sample_len, self.rollout_len, 1),
         )
         for i in range(self.sample_len):
-            qfrc_applied[i, :][:, self.jnt_inds] = self.grav_comp
+            qfrc_applied[i, :][:, self.ctrl_inds] = self.grav_comp
 
         init_states = np.tile(
             self.phys.get_state().reshape(1, self.nqva), (self.sample_len, 1)
         )
 
         for i in range(self.sample_len):
-            ctrls[i, :][:, self.jnt_inds] = np.random.normal(
+            ctrls[i, :][:, self.ctrl_inds] = np.random.normal(
                 self.ctrl_means, self.ctrl_stds
             )
         for t in range(self.cem_len):
             rollouts = self.rollout(init_states, ctrls,qfrc_applied)
             costs = self.get_cost(rollouts, np.array(ctrls))
             top_traj_i = np.argsort(costs)[: self.top_traj_len]
-            top_traj = ctrls[top_traj_i, :][:, :, self.jnt_inds]
+            top_traj = ctrls[top_traj_i, :][:, :, self.ctrl_inds]
             self.ctrl_means = np.mean(top_traj, axis=0)
             self.ctrl_stds = np.std(top_traj, axis=0)
             for i in range(self.sample_len):
                 if i not in top_traj_i:
-                    ctrls[i, :][:, self.jnt_inds] = np.random.normal(
+                    ctrls[i, :][:, self.ctrl_inds] = np.random.normal(
                         self.ctrl_means, self.ctrl_stds
                     )
-        self.ctrl = top_traj[0][0]
-        super().step()
-        self.update()
+        self.ctrl = self.phys.data.ctrl
+        self.ctrl[self.ctrl_inds] = top_traj[0][0]
+
+        return self.ctrl
     
     
 

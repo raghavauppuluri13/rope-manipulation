@@ -2,7 +2,7 @@
     <compiler angle="radian"/>
     <size njmax="500" nconmax="100"/>
     <worldbody>
-        <body name="CB0" pos="0 0 0">
+        <body name="CB0" pos="-0.2 0 0">
             <inertial pos="0 0 0" quat="0.707107 0 0.707107 0" mass="0.0136136" diaginertia="2.52375e-06 2.52375e-06 6.38791e-07"/>
             <geom name="CG0" size="0.01 0.015" quat="0.707107 0 0.707107 0" type="capsule" rgba="0.8 0.2 0.1 1"/>
             <body name="CB1" pos="0.04 0 0">

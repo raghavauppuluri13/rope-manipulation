@@ -1,55 +1,43 @@
-from turtle import setpos
-from controllers import PositionController
-from rope_env import rope_env
+import grp
+from rope_env import rope_env,FRONT_VIEW,EYE_IN_HAND_VIEW,TASK_VIEW
+from collections import deque
 from dm_control import viewer
-import matplotlib.pyplot as plt
-from utils import Interpolator
-import numpy as np
+from observer import Observer
+from planner import ArmPlanner, GripperPlanner, Planner
+from controllers import ArmPositionController, GripperController
 
 env = rope_env()
-action_spec = env.action_spec()
-
-def sample_random_action():
-    act = env.random_state.uniform(
-                low=action_spec.minimum,
-                high=action_spec.maximum,
-            ).astype(action_spec.dtype, copy=False)
-    return act
 #viewer.launch(env)
+
 timestep = env.reset()
-print(env.observation_spec())
 obs = timestep.observation['rope/position']
-goal_pose = obs[:,-1,:]
-ctrl_steps = 75
-controller = PositionController(env,'config/panda.yaml')
-interpolator = Interpolator(0.1)
-print(goal_pose)
-print(controller.ee_pos)
-interpolator.set_goal(controller.ee_pos,goal_pose)
+pick = obs[:,-1,:]
 
-err = []
+place = pick + [-0.1,0.1,0] 
+home = place + [0,0,0.6] 
 
+observer = Observer(env.physics,obs_camera=TASK_VIEW,show=True)
 
-fig,ax = plt.subplots(nrows=controller.dof,ncols=1)
+arm_controller = ArmPositionController(env,'config/panda.yaml')
+arm_planner = ArmPlanner(env,arm_controller,observer,interpolator_step=0.08) 
 
-fig,ax1 = plt.subplots()
+grip_controller = GripperController(env,'config/panda_hand.yaml')
+grip_planner = GripperPlanner(env,grip_controller,observer,interpolator_step=0.10) 
 
-for t in range(len(interpolator)): 
-    controller.set_cartesian_goal(interpolator.next())
-    for i in range(ctrl_steps):
-        err.append(controller.setpoint - controller.qpos)
-        t = np.arange(len(err))
-        action = controller.step()
-        timestep = env.step(action)
-        plt.plot(t,err)
+setpoints = deque([
+    (arm_planner,home),
+    (arm_planner,place),
+    (grip_planner,grip_controller.close),
+    (arm_planner,pick),
+    (grip_planner,grip_controller.open)
+])
 
-        for i in range(controller.dof):
-            ax[i].cla()
-            ax[i].plot(t, np.array(err)[:,i])
-            ax[i].set_xlabel("Time")
-            ax[i].set_ylabel("Error")
-            ax[i].set_title("MPC Error Plot at Joint {}".format(i))
-        obs = timestep.observation
-        img = obs['frontview']
-        ax1.imshow(img[0])
-        plt.pause(0.001)
+while setpoints or not arm_planner.done or not grip_planner.done:
+    if arm_planner.done and grip_planner.done:
+        planner,setp = setpoints.pop()
+        planner.set_goal(setp)
+    arm_action = arm_planner.get_action()
+    grip_action = grip_planner.get_action()
+    action = arm_action + grip_action
+    timestep = env.step(action)
+    observer.step(timestep)

@@ -1,0 +1,14 @@
+jnt_names:
+  - "gripper0_finger_joint1"
+  - "gripper0_finger_joint2"
+
+act_names:
+  - "gripper0_gripper_finger_joint1"
+  - "gripper0_gripper_finger_joint2"
+
+force_sensor: "gripper0_force_ee"
+
+grasp_friction:
+
+open: [0.04,-0.04]
+closed: [0,0]

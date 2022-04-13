@@ -20,11 +20,10 @@ act_names:
 ee_site: "gripper0_ft_frame"
 
 # Controller Params
-hz: 25
 pos:
-  Kp: [50, 50, 100, 100, 50, 50, 50]
-  Ki: [0,0,0,75,0,5,5]
-  damp_ratio: 0.4
+  Kp: [50, 22, 50, 22, 50, 30, 50]
+  Ki: [0.01,0.1,0.01,0.01,0.01,0.01,0.01]
+  Kd: [5, 3, 5, 3, 5, 4,5]
 
 vel:
   Kp: [0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03]
@@ -34,10 +33,10 @@ torq:
   Kd: []
 
 mpc:
-  sample_len: 50
-  rollout_len: 5
-  cem_len: 5
-  top_traj: 5
+  sample_len: 100
+  rollout_len: 6
+  cem_len: 100
+  top_traj: 40
   w_pos: 100
   w_vel: 0.0
   w_reg: 0.0

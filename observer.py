@@ -8,7 +8,8 @@ class Observer:
     def __init__(
         self,
         physics: mujoco.Physics,
-        camera_id=-1,
+        obs_camera=-1,
+        show=False,
         height=480,
         width=640,
         fps=10,
@@ -18,27 +19,30 @@ class Observer:
         self.width = width
         self.height = height
         self.physics = physics
-        self.camera_id = camera_id
+        self.obs_camera = obs_camera
         self.frames = [] 
         self.fps = fps
         self.dpi = dpi
         self.frame_i = 0
         self.render_factor = render_factor
+        self.show = show
+        if self.show:
+            fig,self.ax = plt.subplots()
 
-    def render(self):
-        return self.physics.render(self.height, self.width, camera_id=self.camera_id)
-
-    def show(self):
-        img = self.render()
-        plt.imshow(img)
-        plt.pause(0.001)
-
-    def step(self):
+    def step(self,timestep,hold=False):
+        img = timestep.observation[self.obs_camera][0]
         if (
             self.physics.time() > self.frame_i / self.fps
         ):
-            self.frames.append(self.render())
+            self.frames.append(img)
             self.frame_i += 1
+
+        if self.show:
+            self.ax.imshow(img)
+            if hold:
+                plt.show()
+            else:
+                plt.pause(0.001)
 
     def save(self, path="env_render.gif"):
         """Saves rendered frames as gif
