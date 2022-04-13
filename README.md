@@ -24,6 +24,8 @@ python tuning.py
 python exploration.py
 ```
 
+![rope_env](exploration.gif)
+
 ## Run 
 
 ## To-do
