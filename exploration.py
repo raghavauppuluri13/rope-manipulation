@@ -17,7 +17,7 @@ pick = obs[:,9,:]
 place = pick + [-0.3,-0.3,0] 
 home = place + [0,0,0.6] 
 
-observer = Observer(env.physics,obs_camera=TASK_VIEW,show=True)
+observer = Observer(env.physics,obs_camera=TASK_VIEW,show=False)
 
 arm_controller = ArmPositionController(env,'config/panda.yaml')
 arm_planner = ArmPlanner(env,arm_controller,observer,interpolator_step=0.1) 
@@ -44,3 +44,5 @@ while setpoints or not arm_planner.done or not grip_planner.done:
     action = arm_action + grip_action
     timestep = env.step(action)
     observer.step(timestep)
+
+observer.save("exploration.gif")

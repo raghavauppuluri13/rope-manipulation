@@ -1,6 +1,6 @@
 # rope-manipulation
 
-Manipulating rope to different goal states. From high-dimensional images, generate
+Manipulating rope to different goal states.
 
 ## Quick Start
 
@@ -12,19 +12,17 @@ conda env create --file environment.yaml
 
 Install [dm_control](https://github.com/deepmind/dm_control#requirements-and-installation)
 
-2. Run the pd_control.py to get the PD controller rollout visualized in env_render.gif
 
-```
-python pd_control.py
-```
-
-3. Run the tuning.py to get the MPC controller error graphs (written to `graphs`) for a single setpoint
+2. Run the tuning.py to view the PID controller tuning results
 
 ```
 python tuning.py
 ```
-4. Run `traj_follow_mpc.py` to get the MPC controller error following a trajectory 
 
+4. Run `exploration.py` to run a sample rollout interaction with the rope
+```
+python exploration.py
+```
 
 ## Run 
 
