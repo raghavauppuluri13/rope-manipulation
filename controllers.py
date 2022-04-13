@@ -82,7 +82,6 @@ class ArmController(Controller):
             )
             if res.success:
                 break
-        assert res.success
         return res.qpos[self.jnt_inds]
 
     def set_cartesian_goal(self, target_pos=None, target_quat=DOWN_QUATERNION):
@@ -106,11 +105,11 @@ class PositionController(Controller):
         """
         super().__init__(**kwargs)
         self.Kp = np.array(self.params["pos"]["Kp"])
-        #self.Ki = np.array(self.params["pos"]["Ki"])
+        self.Ki = np.array(self.params["pos"]["Ki"])
         self.Kd = np.array(self.params["pos"]["Kd"]) 
 
-        # self.saturated = False
-        # self.err_sum = np.zeros(self.dof)
+        self.saturated = False
+        self.err_sum = np.zeros(self.dof)
 
 
     def step(self):
@@ -118,12 +117,12 @@ class PositionController(Controller):
         err = self.setpoint - self.qpos
         D_err = -self.qvel
 
-        desired_ctrl = np.multiply(self.Kp, err) + np.multiply(self.Kd, D_err)
+        desired_ctrl = np.multiply(self.Kp, err) + np.multiply(self.Kd, D_err) + np.multiply(self.Ki, self.err_sum)
         ctrl = np.dot(self.mass_matrix, desired_ctrl) + self.grav_comp
         #self.ctrl = np.clip(desired_ctrl, self.env.action_spec.minimum, self.action_spec.maximum)
-        # self.saturated = (
-        #     False if np.sum(np.abs(ctrl - desired_ctrl)) == 0 else True
-        # )
+        self.saturated = (
+            False if np.sum(np.abs(ctrl - desired_ctrl)) == 0 else True
+        )
         return self.set_ctrl(ctrl)
 
 class ArmPositionController(ArmController,PositionController):

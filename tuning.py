@@ -19,9 +19,9 @@ def sample_random_action():
 
 timestep = env.reset()
 obs = timestep.observation['rope/position']
-goal_pose = obs[:,5,:]
+goal_pose = obs[:,5,:] + [0,0,0.1]
 
-observer = Observer(env.physics,obs_camera=TASK_VIEW,show=False)
+observer = Observer(env.physics,obs_camera=TASK_VIEW,show=True)
 
 arm_controller = ArmPositionController(env,'config/panda.yaml')
 arm_planner = ArmPlanner(env,arm_controller,observer,interpolator_step=0.02) 
@@ -42,7 +42,7 @@ for i in range(arm_controller.dof):
     ax[i].plot(t, np.array(err)[:,i])
     ax[i].set_xlabel("Time")
     ax[i].set_ylabel("Error")
-    ax[i].set_title("MPC Error Plot at Joint {}".format(i))
+    ax[i].set_title("PID Error Plot at Joint {}".format(i))
     ax[i].grid(True)
 
 pos_err = np.sum((arm_controller.ee_pos - goal_pose) ** 2)

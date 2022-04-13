@@ -10,7 +10,7 @@ env = suite.make(
 )
 import collections
 from dm_control import mjcf
-from dm_control import composer
+from dm_control import composer,viewer
 from dm_control.composer import define
 from dm_control.composer.observation import observable
 from dm_control.manipulation.shared import observations
@@ -117,3 +117,7 @@ def rope_env():
     env = composer.Environment(task)
 
     return env
+
+if __name__ == '__main__':
+    env = rope_env()
+    viewer.launch(env)

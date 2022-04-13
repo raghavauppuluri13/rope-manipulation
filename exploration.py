@@ -11,24 +11,27 @@ env = rope_env()
 
 timestep = env.reset()
 obs = timestep.observation['rope/position']
-pick = obs[:,-1,:]
+hover = obs[:,9,:] + [0,0,0.1]
+pick = obs[:,9,:]
 
-place = pick + [-0.1,0.1,0] 
+place = pick + [-0.3,-0.3,0] 
 home = place + [0,0,0.6] 
 
 observer = Observer(env.physics,obs_camera=TASK_VIEW,show=True)
 
 arm_controller = ArmPositionController(env,'config/panda.yaml')
-arm_planner = ArmPlanner(env,arm_controller,observer,interpolator_step=0.08) 
+arm_planner = ArmPlanner(env,arm_controller,observer,interpolator_step=0.1) 
 
 grip_controller = GripperController(env,'config/panda_hand.yaml')
-grip_planner = GripperPlanner(env,grip_controller,observer,interpolator_step=0.10) 
+grip_planner = GripperPlanner(env,grip_controller,observer,interpolator_step=0.2) 
 
 setpoints = deque([
     (arm_planner,home),
+    (grip_planner,grip_controller.open),
     (arm_planner,place),
     (grip_planner,grip_controller.close),
     (arm_planner,pick),
+    (arm_planner,hover),
     (grip_planner,grip_controller.open)
 ])
 
