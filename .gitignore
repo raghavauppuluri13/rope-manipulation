@@ -1,7 +1,6 @@
 *.mp4
 *.png
 *.jpg
-*.gif
 __pycache__/*
 __pycache__/
 
