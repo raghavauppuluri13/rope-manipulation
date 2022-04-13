@@ -1,0 +1,42 @@
+# Panda Arm Configuration Parameters
+jnt_names:
+  - "robot0_joint1"
+  - "robot0_joint2"
+  - "robot0_joint3"
+  - "robot0_joint4"
+  - "robot0_joint5"
+  - "robot0_joint6"
+  - "robot0_joint7"
+
+act_names:
+  - "robot0_torq_j1"
+  - "robot0_torq_j2"
+  - "robot0_torq_j3"
+  - "robot0_torq_j4"
+  - "robot0_torq_j5"
+  - "robot0_torq_j6"
+  - "robot0_torq_j7"
+
+ee_site: "gripper0_ft_frame"
+
+# Controller Params
+pos:
+  Kp: [50, 22, 50, 22, 50, 30, 50]
+  Ki: [0.01,0.1,0.01,0.01,0.01,0.01,0.01]
+  Kd: [5, 3, 5, 3, 5, 4,5]
+
+vel:
+  Kp: [0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03]
+
+torq:
+  Kp: []
+  Kd: []
+
+mpc:
+  sample_len: 100
+  rollout_len: 6
+  cem_len: 100
+  top_traj: 40
+  w_pos: 100
+  w_vel: 0.0
+  w_reg: 0.0
