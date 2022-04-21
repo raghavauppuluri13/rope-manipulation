@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
-from dm_control import mujoco
+from dm_control import mujoco, composer
 
 
 class Observer:
     def __init__(
         self,
-        physics: mujoco.Physics,
+        env : composer.Environment,
         obs_camera=-1,
         show=False,
         height=480,
@@ -16,9 +16,9 @@ class Observer:
         dpi=50,
         render_factor=72.0,
     ):
+        self.env = env
         self.width = width
         self.height = height
-        self.physics = physics
         self.obs_camera = obs_camera
         self.frames = [] 
         self.fps = fps
@@ -28,11 +28,15 @@ class Observer:
         self.show = show
         if self.show:
             fig,self.ax = plt.subplots()
+    
+    def reset(self):
+        self.frames = []
+        self.frame_i = 0
 
     def step(self,timestep,hold=False):
         img = timestep.observation[self.obs_camera][0]
         if (
-            self.physics.time() > self.frame_i / self.fps
+            self.env.physics.time() > self.frame_i / self.fps
         ):
             self.frames.append(img)
             self.frame_i += 1

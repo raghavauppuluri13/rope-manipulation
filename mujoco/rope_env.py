@@ -4,6 +4,8 @@ env = suite.make(
         robots=["Panda"],
         has_renderer=False,
         has_offscreen_renderer=False,
+        render_visual_mesh=False,
+        render_collision_mesh=False,
         ignore_done=True,
         use_camera_obs=False,
         control_freq=100,
@@ -107,6 +109,12 @@ def rope_env():
 
     world = mjcf.from_xml_string(env_xml)
     cube = world.find('body','cube_main')
+    grip_vis = world.find('site','gripper0_grip_site_cylinder')
+    geoms = world.find_all('geom')
+    for geom in geoms:
+        if 'collision' in geom.name:
+            geom.rgba = [0,0,0,0] 
+    grip_vis.remove()
     cube.remove()
 
     rope_entity = RopeEntity()

@@ -2,13 +2,10 @@
 Controller implementations for a Panda arm in Mujoco
 Author: Raghava Uppuluri
 """
-from configparser import Interpolation
 from multiprocessing import Pool
 import numpy as np
 import yaml
 from ctypes import *
-
-from dm_control.mujoco.wrapper.mjbindings import enums
 
 from mujoco import rollout
 from dm_control import mjcf, mujoco,composer
@@ -41,6 +38,9 @@ class Controller:
         self.mass_matrix = mass_matrix[self.jnt_inds, :][:, self.jnt_inds]
         self.grav_comp = self.phys.data.qfrc_bias[self.jnt_inds]
         self.setpoint = self.qpos
+    
+    def set_phys(self,physics):
+        self.phys = physics
 
     def set_joint_goal(self, setpoint):
         assert isinstance(setpoint, (list, np.ndarray, tuple))
@@ -67,7 +67,7 @@ class ArmController(Controller):
         super().__init__(**kwargs)
         self.ee_site = self.params["ee_site"]
         self.ee_pos = self.phys.named.data.site_xpos[self.ee_site]
-        self.ik_attempts = 10
+        self.ik_attempts = 3
 
     def ik(self, target_pos=None, target_quat=None):
         assert target_pos is not None or target_quat is not None
@@ -78,7 +78,6 @@ class ArmController(Controller):
                 target_pos=target_pos,
                 target_quat=target_quat,
                 joint_names=self.jnt_names,
-                max_steps=200
             )
             if res.success:
                 break
@@ -146,7 +145,7 @@ class GripperController(Controller):
         self.update()
         return self.set_ctrl(self.setpoint) 
 
-
+# TODO: Tune this
 class VelocityController(ArmController):
     """Joint velocity controller"""
 
@@ -192,6 +191,7 @@ class VelocityController(ArmController):
         """
         self.step()
 
+# TODO: Runs very slow, convert to Online MPC
 class MPC(ArmController):
     def __init__(self, env, params):
         super().__init__(env, params)

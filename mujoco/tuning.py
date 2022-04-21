@@ -21,7 +21,7 @@ timestep = env.reset()
 obs = timestep.observation['rope/position']
 goal_pose = obs[:,5,:] + [0,0,0.1]
 
-observer = Observer(env.physics,obs_camera=TASK_VIEW,show=True)
+observer = Observer(env,obs_camera=TASK_VIEW,show=False)
 
 arm_controller = ArmPositionController(env,'config/panda.yaml')
 arm_planner = ArmPlanner(env,arm_controller,observer,interpolator_step=0.02) 
@@ -48,3 +48,4 @@ for i in range(arm_controller.dof):
 pos_err = np.sum((arm_controller.ee_pos - goal_pose) ** 2)
 print("final pos_error: %f" % pos_err)
 plt.show()
+observer.save('../gifs/tuning.gif')
