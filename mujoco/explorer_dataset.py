@@ -19,14 +19,14 @@ _DATA_PATH = os.path.abspath("../datasets")
 _NAME = datetime.datetime.today().strftime("%Y-%m-%d-%H:%M:%S")
 
 _BATCHES = 1000
-_BATCH_SIZE = 5
+_BATCH_SIZE = 15
 
 #_SEED = 321
 
 _ACTION_HAT_SPECS = {
-    "rope_site": (3, 7),
-    "angle": (-np.pi,np.pi),
-    "length": (0.1,0.3),
+    "rope_site": (3,6),
+    "angle": (-3*np.pi/4,3*np.pi/4),
+    "length": (0.05,0.15),
 }
 
 def _polar_to_xyz(r,angle):
@@ -119,5 +119,8 @@ if __name__ == '__main__':
             post_act_obs = timestep.observation[TASK_VIEW][0]
             Image.fromarray(pre_act_obs).save(f"{_DATA_PATH}/{_NAME}/batch_{i}/obs/{j}_1.png")
             Image.fromarray(post_act_obs).save(f"{_DATA_PATH}/{_NAME}/batch_{i}/obs/{j}_2.png")
+            for action_hat in action_hats:
+                rope_site = action_hat['rope_site']
+                action_hat['pick_pos'] = env.physics.named.data.xpos[f'rope/CB{rope_site}'] 
             np.save(f"{_DATA_PATH}/{_NAME}/batch_{i}/action_hats.npy",action_hats)
         observer.save(f"{_DATA_PATH}/{_NAME}/batch_{i}/batch.gif")

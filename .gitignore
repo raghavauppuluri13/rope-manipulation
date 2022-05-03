@@ -1,4 +1,6 @@
 datasets/*
+*wandb*
+state_dicts*
 *.mp4
 *.png
 *.jpg

@@ -1,0 +1,19 @@
+# Data
+paths:
+  - "/home/ruppulur/repos/rope-manipulation/datasets/2022-04-22-16:15:12" 
+out_dir: "state_dicts"
+img_size: 64
+
+# Model
+max_info_w: 0.1
+trans_reg_w: 0.1
+s_dim: 7
+z_dim: 2
+channel_dim: 1
+  ## Optimizer
+betas: [0.5, 0.999]
+
+# Training
+batch_size: 30
+lr: 0.0002
+epochs: 200
