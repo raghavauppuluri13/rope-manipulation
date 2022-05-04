@@ -19,9 +19,20 @@ Install [dm_control](https://github.com/deepmind/dm_control#requirements-and-ins
 python tuning.py
 ```
 
-4. Run `exploration.py` to run a sample rollout interaction with the rope
+4. In the `mujoco` folder, run `explorer_dataset.py` to generate the dataset
 ```
-python exploration.py
+python explorer_dataset.py
+```
+
+For the training, make sure to comment out the `wandb` functions such as log, init as it won't work on machines other than the owners.
+
+5. In the `learning` folder, run `train_inv_dyn.py` to run the training for the inverse dynamics model 
+```
+python train_inv_dyn.py
+```
+5. In the `learning` folder, run `train_infogan.py` to run the training for the infogan model 
+```
+python train_infogan.py
 ```
 
 ![rope_env](exploration.gif)
