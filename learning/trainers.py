@@ -131,9 +131,9 @@ class CausalInfoganTrainer:
                 # Maximal mutual inf
                 crossen_loss = -self.Q.log_post_prob(o_fake, s).mean(0)
                 crossen_next_loss = -self.Q.log_post_prob(o_fake_next, s_next).mean(0)
-                ent_next_loss = self.T.log_post_prob(s, s_next).mean(0)
-                ent_loss = self.prior.log_prob(s).mean(0)
-                Q_loss = crossen_loss + ent_loss + crossen_next_loss + ent_next_loss
+                ent_next_loss = -self.T.log_post_prob(s, s_next).mean(0)
+                ent_loss = -self.prior.log_prob(s).mean(0)
+                Q_loss = crossen_loss - ent_loss + crossen_next_loss - ent_next_loss
 
                 T_loss = (self.T.ret_var(s) ** 2).sum(1).mean(0)
 
@@ -251,10 +251,16 @@ class InverseDynamicsTrainer:
         )
 
         train_dataset = ConcatDataset(
-            [RopeActionDataset(path, transforms=trans, **kwargs) for path in self.train_paths]
+            [
+                RopeActionDataset(path, transforms=trans, **kwargs)
+                for path in self.train_paths
+            ]
         )
         test_dataset = ConcatDataset(
-            [RopeActionDataset(path, transforms=trans, **kwargs) for path in self.test_paths]
+            [
+                RopeActionDataset(path, transforms=trans, **kwargs)
+                for path in self.test_paths
+            ]
         )
         print(len(train_dataset))
         print(len(test_dataset))
@@ -264,7 +270,9 @@ class InverseDynamicsTrainer:
         self.test_loader = DataLoader(
             test_dataset, self.batch_size, num_workers=3, shuffle=True
         )
-        self.criterion = lambda x, label: -torch.sum(torch.log_softmax(x,dim=-1) * label)
+        self.criterion = lambda x, label: -torch.sum(
+            torch.log_softmax(x, dim=-1) * label
+        )
 
         self.optimizer = Adam(self.model.parameters(), self.lr, betas=self.betas)
         wandb.init(group="Inverse Dynamics")
@@ -380,9 +388,6 @@ class InverseDynamicsTrainer:
                         loss.item(),
                     )
                 )
-
-
-
 
     def display_sample(self):
         o, o_next, (rope_site, angle, len) = next(iter(self.train_loader))

@@ -10,7 +10,7 @@ import torch
 torch.manual_seed(512)
 random.seed(512)
 
-PARAMS = '/home/ruppulur/repos/rope-manipulation/learning/config/inverse_dynamics.yaml' 
+PARAMS = "/home/ruppulur/repos/rope-manipulation/learning/config/inverse_dynamics.yaml"
 
 with open(PARAMS, "r") as f:
     params = yaml.safe_load(f)

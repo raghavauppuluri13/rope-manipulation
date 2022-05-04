@@ -8,10 +8,11 @@ import yaml
 from ctypes import *
 
 from mujoco import rollout
-from dm_control import mjcf, mujoco,composer
+from dm_control import mjcf, mujoco, composer
 from dm_control.utils.inverse_kinematics import qpos_from_site_pose
 
-DOWN_QUATERNION = np.array([0., 0.70710678118, 0.70710678118, 0.])
+DOWN_QUATERNION = np.array([0.0, 0.70710678118, 0.70710678118, 0.0])
+
 
 class Controller:
     def __init__(self, env: composer.Environment, params_file):
@@ -38,8 +39,8 @@ class Controller:
         self.mass_matrix = mass_matrix[self.jnt_inds, :][:, self.jnt_inds]
         self.grav_comp = self.phys.data.qfrc_bias[self.jnt_inds]
         self.setpoint = self.qpos
-    
-    def set_phys(self,physics):
+
+    def set_phys(self, physics):
         self.phys = physics
 
     def set_joint_goal(self, setpoint):
@@ -55,12 +56,12 @@ class Controller:
         mujoco.mj_fullM(self.phys.model.ptr, mass_matrix, self.phys.data.qM)
         self.mass_matrix = mass_matrix[self.jnt_inds, :][:, self.jnt_inds]
         self.grav_comp = self.phys.data.qfrc_bias[self.jnt_inds]
-    
-    def set_ctrl(self,ctrl):
+
+    def set_ctrl(self, ctrl):
         full_ctrl = np.zeros_like(self.phys.data.ctrl)
         full_ctrl[self.ctrl_inds] = ctrl
-        return full_ctrl 
-        
+        return full_ctrl
+
 
 class ArmController(Controller):
     def __init__(self, **kwargs):
@@ -105,28 +106,31 @@ class PositionController(Controller):
         super().__init__(**kwargs)
         self.Kp = np.array(self.params["pos"]["Kp"])
         self.Ki = np.array(self.params["pos"]["Ki"])
-        self.Kd = np.array(self.params["pos"]["Kd"]) 
+        self.Kd = np.array(self.params["pos"]["Kd"])
 
         self.saturated = False
         self.err_sum = np.zeros(self.dof)
-
 
     def step(self):
         self.update()
         err = self.setpoint - self.qpos
         D_err = -self.qvel
 
-        desired_ctrl = np.multiply(self.Kp, err) + np.multiply(self.Kd, D_err) + np.multiply(self.Ki, self.err_sum)
-        ctrl = np.dot(self.mass_matrix, desired_ctrl) + self.grav_comp
-        #self.ctrl = np.clip(desired_ctrl, self.env.action_spec.minimum, self.action_spec.maximum)
-        self.saturated = (
-            False if np.sum(np.abs(ctrl - desired_ctrl)) == 0 else True
+        desired_ctrl = (
+            np.multiply(self.Kp, err)
+            + np.multiply(self.Kd, D_err)
+            + np.multiply(self.Ki, self.err_sum)
         )
+        ctrl = np.dot(self.mass_matrix, desired_ctrl) + self.grav_comp
+        # self.ctrl = np.clip(desired_ctrl, self.env.action_spec.minimum, self.action_spec.maximum)
+        self.saturated = False if np.sum(np.abs(ctrl - desired_ctrl)) == 0 else True
         return self.set_ctrl(ctrl)
 
-class ArmPositionController(ArmController,PositionController):
+
+class ArmPositionController(ArmController, PositionController):
     def __init__(self, env, params_file="panda_cfg.yaml"):
         super().__init__(env=env, params_file=params_file)
+
 
 class GripperController(Controller):
     def __init__(self, env, params_file="panda_cfg.yaml"):
@@ -137,13 +141,14 @@ class GripperController(Controller):
             params_file (string): path to file for PD controller
         """
         super().__init__(env=env, params_file=params_file)
-        self.grip_force_sensor = self.params['force_sensor']
-        self.open = np.array(self.params['open'])
-        self.close = np.array(self.params['closed'])
-    
+        self.grip_force_sensor = self.params["force_sensor"]
+        self.open = np.array(self.params["open"])
+        self.close = np.array(self.params["closed"])
+
     def step(self):
         self.update()
-        return self.set_ctrl(self.setpoint) 
+        return self.set_ctrl(self.setpoint)
+
 
 # TODO: Tune this
 class VelocityController(ArmController):
@@ -158,8 +163,8 @@ class VelocityController(ArmController):
         """
         super().__init__(phys, params_file)
         self.Kp = np.array(self.params["vel"]["Kp"])
-        self.Ki = self.Kp * 0.05 
-        self.Kd = self.Kp * 0.01 
+        self.Ki = self.Kp * 0.05
+        self.Kd = self.Kp * 0.01
 
         self.saturated = False
         self.err_sum = np.zeros(self.dof)
@@ -191,6 +196,7 @@ class VelocityController(ArmController):
         """
         self.step()
 
+
 # TODO: Runs very slow, convert to Online MPC
 class MPC(ArmController):
     def __init__(self, env, params):
@@ -200,18 +206,26 @@ class MPC(ArmController):
         self.rollout_len = self.mpc_params["rollout_len"]
         self.cem_len = self.mpc_params["cem_len"]
         self.top_traj_len = self.mpc_params["top_traj"]
-        self.ctrl_means = np.zeros((self.rollout_len, self.dof)) if "means" not in self.mpc_params else np.array(self.mpc_params["means"])
-        self.ctrl_stds = np.ones((self.rollout_len, self.dof)) if "stds" not in self.mpc_params else np.array(self.mpc_params["stds"])
+        self.ctrl_means = (
+            np.zeros((self.rollout_len, self.dof))
+            if "means" not in self.mpc_params
+            else np.array(self.mpc_params["means"])
+        )
+        self.ctrl_stds = (
+            np.ones((self.rollout_len, self.dof))
+            if "stds" not in self.mpc_params
+            else np.array(self.mpc_params["stds"])
+        )
         self.nqva = self.phys.model.nq + self.phys.model.nv + self.phys.model.na
         self.pool = Pool(4)
 
     def set_joint_goal(self, setpoint):
         assert isinstance(setpoint, (list, np.ndarray, tuple))
-        assert setpoint.shape == (self.rollout_len,self.dof), "Invalid setpoint shape"
+        assert setpoint.shape == (self.rollout_len, self.dof), "Invalid setpoint shape"
         self.setpoint = setpoint
 
     def set_cartesian_goal(self, target_poses=None, target_quats=None):
-        goal_qposes = np.zeros((self.rollout_len,self.dof))
+        goal_qposes = np.zeros((self.rollout_len, self.dof))
         for i in range(self.rollout_len):
             quat = target_quats[i] if target_quats is not None else None
             goal_qposes[i] = self.ik(target_poses[i], quat)
@@ -228,9 +242,9 @@ class MPC(ArmController):
         costs = np.sum(pos_c + vel_c + reg, axis=-1)
         return costs
 
-    def save_params(self,means_file,std_file):
-        np.savetxt(means_file,self.ctrl_means)
-        np.savetxt(std_file,self.ctrl_stds)
+    def save_params(self, means_file, std_file):
+        np.savetxt(means_file, self.ctrl_means)
+        np.savetxt(std_file, self.ctrl_stds)
         super().save_params()
 
     def step(self):
@@ -254,7 +268,7 @@ class MPC(ArmController):
                 self.ctrl_means, self.ctrl_stds
             )
         for t in range(self.cem_len):
-            rollouts = self.rollout(init_states, ctrls,qfrc_applied)
+            rollouts = self.rollout(init_states, ctrls, qfrc_applied)
             costs = self.get_cost(rollouts, np.array(ctrls))
             top_traj_i = np.argsort(costs)[: self.top_traj_len]
             top_traj = ctrls[top_traj_i, :][:, :, self.ctrl_inds]
@@ -269,10 +283,8 @@ class MPC(ArmController):
         self.ctrl[self.ctrl_inds] = top_traj[0][0]
 
         return self.ctrl
-    
-    
 
-    def rollout(self, init_states, ctrls,qfrc_applied):
+    def rollout(self, init_states, ctrls, qfrc_applied):
         # rollouts_in = [(self.phys.model.ptr,self.phys.data.ptr,init_states[i],ctrls[i],qfrc_applied[i]) for i in range(self.sample_len)]
         # next_states,_ = zip(*self.pool.starmap(call_rollout,rollouts_in))
         # next_states = np.array(next_states)

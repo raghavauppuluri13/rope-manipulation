@@ -7,7 +7,7 @@ from dm_control import mujoco, composer
 class Observer:
     def __init__(
         self,
-        env : composer.Environment,
+        env: composer.Environment,
         obs_camera=-1,
         show=False,
         height=480,
@@ -20,24 +20,22 @@ class Observer:
         self.width = width
         self.height = height
         self.obs_camera = obs_camera
-        self.frames = [] 
+        self.frames = []
         self.fps = fps
         self.dpi = dpi
         self.frame_i = 0
         self.render_factor = render_factor
         self.show = show
         if self.show:
-            fig,self.ax = plt.subplots()
-    
+            fig, self.ax = plt.subplots()
+
     def reset(self):
         self.frames = []
         self.frame_i = 0
 
-    def step(self,timestep,hold=False):
+    def step(self, timestep, hold=False):
         img = timestep.observation[self.obs_camera][0]
-        if (
-            self.env.physics.time() > self.frame_i / self.fps
-        ):
+        if self.env.physics.time() > self.frame_i / self.fps:
             self.frames.append(img)
             self.frame_i += 1
 
