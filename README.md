@@ -2,6 +2,8 @@
 
 Manipulating rope to different goal states using Mujoco.
 
+![demo](https://github.com/raghavauppuluri13/rope-manipulation/blob/master/gifs/exploration.gif?raw=true)
+
 ## Quick Start
 
 1. Create conda environment + install dm_control
