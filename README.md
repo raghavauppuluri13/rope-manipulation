@@ -3,6 +3,8 @@
 Manipulating rope to different goal states using Mujoco.
 
 ![demo](https://github.com/raghavauppuluri13/rope-manipulation/blob/master/gifs/exploration.gif?raw=true)
+![exploration](https://github.com/raghavauppuluri13/rope-manipulation/assets/41026849/8a107f49-11c0-446b-8019-07258dad7e49)
+
 
 ## Quick Start
 
