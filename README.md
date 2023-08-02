@@ -38,8 +38,6 @@ python train_inv_dyn.py
 python train_infogan.py
 ```
 
-![rope_env](exploration.gif)
-
 ## Run 
 
 ## To-do
